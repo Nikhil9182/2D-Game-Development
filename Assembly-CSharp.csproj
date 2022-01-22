@@ -83,6 +83,7 @@
     <Compile Include="Assets\2DGamekit\Utilities\DefaultPlayables\ScreenFader\ScreenFaderBehaviour.cs" />
     <Compile Include="Assets\2DGamekit\Utilities\DefaultPlayables\TransformTween\TransformTweenClip.cs" />
     <Compile Include="Assets\2DGamekit\Utilities\DefaultPlayables\NavMeshAgentControl\NavMeshAgentControlClip.cs" />
+    <Compile Include="Assets\Scripts\PlayerController.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\2DGamekit\Utilities\TextMesh Pro\Resources\Shaders\TMPro.cginc" />
