@@ -1,10 +1,9 @@
-using System;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    [SerializeField] Transform groundCheck;
-    [SerializeField] LayerMask groundMask;
+    public Transform groundCheckTransform;
+    public LayerMask groundLayer;
 
     public float speedOfCharacter;
     public float jumpForce;
@@ -20,8 +19,8 @@ public class PlayerController : MonoBehaviour
     private float normalColHeight; //box collider's heaight
     private float normalCOLOffset; //box collider's offset
     private bool isCrouching; //bool variable for crouching of the character and its animation
-    private bool hasLanded;
-    private bool canJump;
+    private bool isJumping;
+    private bool isFalling;
     private bool isGrounded;
 
 
@@ -33,13 +32,14 @@ public class PlayerController : MonoBehaviour
 
         normalColHeight = _capsuleCollider.size.y;
         normalCOLOffset = _capsuleCollider.offset.y;
-        canJump = true;
     }
 
     private void Update()
     {
         //Take Input First
         TakeInput();
+        //Move character
+        MoveCaharacter();
         //Set Animation for Playing
         SetAnim();
         //Flip character on basis of input
@@ -48,48 +48,29 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        CheckGround();
-        MoveCharacter();
+        CharacterPhysics();
     }
 
-    private void CheckGround()
-    {
-        bool wasGrounded = isGrounded;
-        isGrounded = false;
-
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(groundCheck.position, groundCheckRadius, groundMask);
-        for (int i = 0; i < colliders.Length; i++)
-        {
-            if (colliders[i].gameObject != gameObject)
-            {
-                isGrounded = true;
-                if (!wasGrounded)
-                {
-                    hasLanded = true;
-                    canJump = true;
-                }
-            }
-        }
-
-        if (!isGrounded)
-        {
-            hasLanded = false;
-        }
-    }
-
-    public void MoveCharacter()
+    private void MoveCaharacter()
     {
         Vector3 pos = transform.position;
         //Horizontal Movement
         pos.x += horizontalMove * speedOfCharacter * Time.deltaTime;
-        //Vertical Movement
-        if(verticalMove > 0 && canJump && !isCrouching)
-        {
-            _rigidbody.AddForce(new Vector2(0f, jumpForce), ForceMode2D.Impulse);
-            canJump = false;
-            hasLanded = false;
-        }
         transform.position = pos;
+    }
+
+    public void CharacterPhysics()
+    {
+        //Check if grounded
+        //isGrounded = Physics2D.OverlapCircle(groundCheckTransform.position, groundCheckRadius, groundLayer);
+
+        //Vertical Movement
+        if (verticalMove > 0 && isGrounded && !isCrouching)
+        {
+            Debug.Log(isGrounded);
+            _rigidbody.AddForce(new Vector2(0f, jumpForce), ForceMode2D.Impulse);
+            isJumping = true;
+        }
 
         if (isCrouching)
         {
@@ -107,15 +88,16 @@ public class PlayerController : MonoBehaviour
     {
         horizontalMove = Input.GetAxisRaw("Horizontal");
         verticalMove = Input.GetAxisRaw("Jump");
-        isCrouching = Input.GetKey(KeyCode.LeftControl);
+        isCrouching = Input.GetKey(KeyCode.LeftControl) && isGrounded;
     }
 
     public void SetAnim()
     {
         _animator.SetFloat("Speed", Mathf.Abs(horizontalMove));
-        _animator.SetBool("Jump", (verticalMove > 0 && canJump) ? true : false);
+        _animator.SetBool("isJumping", isJumping);
         _animator.SetBool("Crouch", isCrouching);
-        _animator.SetBool("Land", hasLanded);
+        _animator.SetBool("isFalling", isFalling);
+        _animator.SetBool("isGrounded", isGrounded);
     }
 
     public void Flip()
@@ -132,11 +114,26 @@ public class PlayerController : MonoBehaviour
         transform.localScale = scale;
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
+    private void OnFallEvent()
     {
-        if(collision.gameObject.CompareTag("Ground"))
+        isFalling = true;
+        isJumping = false;
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if(collision.gameObject.layer == 31)
         {
-            hasLanded = true;
+            isGrounded = true;
+            isFalling = false;
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        if (collision.gameObject.layer == 31)
+        {
+            isGrounded = false;
         }
     }
 }
